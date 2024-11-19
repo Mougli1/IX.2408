@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mass_based_distance import MeDissimilarity
 from sklearn.cluster import DBSCAN, KMeans
-from sklearn.metrics import pairwise_distances, davies_bouldin_score
+from sklearn.metrics import pairwise_distances, davies_bouldin_score, silhouette_score
 from tqdm import tqdm
 import seaborn as sns
 
@@ -63,8 +63,9 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
         print(mdist_mass)
         np.set_printoptions()
 
-    eps_values = [0.1, 0.2, 0.25, 0.3, 0.35]
-    min_samples_values = [2, 3, 5, 8]
+    eps_values = [0.25, 0.3, 0.35, 0.4]
+    min_samples_values = [4, 5, 6, 7]
+
     results = []
     y = y + 1
     for eps in eps_values:
@@ -111,14 +112,32 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
             else:
                 db_kmeans = np.nan
 
+            if n_clusters_euclidean > 1 and len(set(labels_euclidean)) <= len(X_scaled):
+                silhouette_euclidean = silhouette_score(X_scaled, labels_euclidean)
+            else:
+                silhouette_euclidean = np.nan
+
+            if n_clusters_mass > 1 and len(set(labels_mass)) <= len(X_scaled):
+                silhouette_mass = silhouette_score(X_scaled, labels_mass)
+            else:
+                silhouette_mass = np.nan
+
+            if n_clusters_kmeans > 1 and len(set(labels_kmeans)) <= len(X_scaled):
+                silhouette_kmeans = silhouette_score(X_scaled, labels_kmeans)
+            else:
+                silhouette_kmeans = np.nan
+
             print(
-                f"Euclidienne - Clusters: {n_clusters_euclidean}, Bruit: {n_noise_euclidean}, Davies-Bouldin Index: {db_euclidean:.4f}"
+                f"Euclidienne - Clusters: {n_clusters_euclidean}, Bruit: {n_noise_euclidean}, "
+                f"Davies-Bouldin Index: {db_euclidean:.4f}, Coefficient de silhouette: {silhouette_euclidean:.4f}"
             )
             print(
-                f"Masse-based - Clusters: {n_clusters_mass}, Bruit: {n_noise_mass}, Davies-Bouldin Index: {db_mass:.4f}"
+                f"Masse-based - Clusters: {n_clusters_mass}, Bruit: {n_noise_mass}, "
+                f"Davies-Bouldin Index: {db_mass:.4f}, Coefficient de silhouette: {silhouette_mass:.4f}"
             )
             print(
-                f"K-means - Clusters: {n_clusters_kmeans}, Bruit: {n_noise_kmeans}, Davies-Bouldin Index: {db_kmeans:.4f}"
+                f"K-means - Clusters: {n_clusters_kmeans}, Bruit: {n_noise_kmeans}, "
+                f"Davies-Bouldin Index: {db_kmeans:.4f}, Coefficient de silhouette: {silhouette_kmeans:.4f}"
             )
 
             plt.figure(figsize=(15, 8))
@@ -208,12 +227,15 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
                 'n_clusters_euclidean': n_clusters_euclidean,
                 'n_noise_euclidean': n_noise_euclidean,
                 'db_euclidean': db_euclidean,
+                'silhouette_euclidean': silhouette_euclidean,
                 'n_clusters_mass': n_clusters_mass,
                 'n_noise_mass': n_noise_mass,
                 'db_mass': db_mass,
+                'silhouette_mass': silhouette_mass,
                 'n_clusters_kmeans': n_clusters_kmeans,
                 'n_noise_kmeans': n_noise_kmeans,
-                'db_kmeans': db_kmeans
+                'db_kmeans': db_kmeans,
+                'silhouette_kmeans': silhouette_kmeans
             })
     df_results = pd.DataFrame(results)
     print("\nRésultats :")
