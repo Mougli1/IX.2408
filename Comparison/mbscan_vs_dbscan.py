@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from mass_based_distance import MeDissimilarity
-from sklearn.cluster import DBSCAN
-from sklearn.metrics import adjusted_rand_score, pairwise_distances
-from tqdm import tqdm 
+from sklearn.cluster import DBSCAN, KMeans
+from sklearn.metrics import pairwise_distances, davies_bouldin_score
+from tqdm import tqdm
 import seaborn as sns
 
 def plot_clusters(X, labels, title):
@@ -40,6 +40,7 @@ def display_heatmaps(mdist_euclidean, mdist_mass):
     sns.heatmap(mdist_mass)
     plt.title("Matrice de distances Mass-based")
     plt.show()
+
 def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_flag=False):
     X_scaled = X
     me_dissim = MeDissimilarity(X_scaled)
@@ -62,9 +63,10 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
         print(mdist_mass)
         np.set_printoptions()
 
-    eps_values = [0.3, 0.35, 0.4, 0.45, 0.5]
-    min_samples_values = [3, 5, 7]
+    eps_values = [0.1, 0.2, 0.25, 0.3, 0.35]
+    min_samples_values = [2, 3, 5, 8]
     results = []
+    y = y + 1
     for eps in eps_values:
         for min_samples in min_samples_values:
             print(f"\nMBSCAN/DBSCAN avec eps={eps} et min_samples={min_samples}")
@@ -74,8 +76,12 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
                 eps=eps, min_samples=min_samples, metric='precomputed'
             )
             labels_mass = dbscan_mass.fit_predict(mdist_mass)
-            ari_euclidean = adjusted_rand_score(y, labels_euclidean)
-            ari_mass = adjusted_rand_score(y, labels_mass)
+
+            labels_euclidean = np.where(labels_euclidean != -1, labels_euclidean + 1, labels_euclidean)
+            labels_mass = np.where(labels_mass != -1, labels_mass + 1, labels_mass)
+
+            kmeans = KMeans(n_clusters=3, random_state=0)
+            labels_kmeans = kmeans.fit_predict(X_scaled) + 1
 
             n_clusters_euclidean = len(set(labels_euclidean)) - (
                 1 if -1 in labels_euclidean else 0
@@ -85,40 +91,129 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
                 1 if -1 in labels_mass else 0
             )
             n_noise_mass = list(labels_mass).count(-1)
+            n_clusters_kmeans = len(set(labels_kmeans)) - (
+                1 if -1 in labels_kmeans else 0
+            )
+            n_noise_kmeans = list(labels_kmeans).count(-1)
+
+            if n_clusters_euclidean > 1:
+                db_euclidean = davies_bouldin_score(X_scaled, labels_euclidean)
+            else:
+                db_euclidean = np.nan
+
+            if n_clusters_mass > 1:
+                db_mass = davies_bouldin_score(X_scaled, labels_mass)
+            else:
+                db_mass = np.nan
+
+            if n_clusters_kmeans > 1:
+                db_kmeans = davies_bouldin_score(X_scaled, labels_kmeans)
+            else:
+                db_kmeans = np.nan
 
             print(
-                f"Euclidienne - Clusters: {n_clusters_euclidean}, Bruit: {n_noise_euclidean}, ARI: {ari_euclidean:.4f}"
+                f"Euclidienne - Clusters: {n_clusters_euclidean}, Bruit: {n_noise_euclidean}, Davies-Bouldin Index: {db_euclidean:.4f}"
             )
             print(
-                f"Masse-based - Clusters: {n_clusters_mass}, Bruit: {n_noise_mass}, ARI: {ari_mass:.4f}"
+                f"Masse-based - Clusters: {n_clusters_mass}, Bruit: {n_noise_mass}, Davies-Bouldin Index: {db_mass:.4f}"
             )
-            plt.figure(figsize=(12, 5))
-            plt.subplot(1, 2, 1)
-            title_euclidean = f'Euclidienne eps={eps} min_samples={min_samples}\nARI={ari_euclidean:.4f}'
+            print(
+                f"K-means - Clusters: {n_clusters_kmeans}, Bruit: {n_noise_kmeans}, Davies-Bouldin Index: {db_kmeans:.4f}"
+            )
+
+            plt.figure(figsize=(15, 8))
+            plt.subplot(2, 3, 1)
+            title_euclidean = f'Euclidienne eps={eps} min_samples={min_samples}'
             plot_clusters(
                 X_scaled,
                 labels_euclidean,
                 title=title_euclidean,
             )
 
-            plt.subplot(1, 2, 2)
-            title_mass = f'Masse-based eps={eps} min_samples={min_samples}\nARI={ari_mass:.4f}'
+            plt.subplot(2, 3, 2)
+            title_mass = f'Masse-based eps={eps} min_samples={min_samples}'
             plot_clusters(
                 X_scaled,
                 labels_mass,
                 title=title_mass,
             )
-            plt.show()
+
+            plt.subplot(2, 3, 3)
+            title_kmeans = f'K-means (k=3)'
+            plot_clusters(
+                X_scaled,
+                labels_kmeans,
+                title=title_kmeans,
+            )
+
+            if y is not None:
+                df_euclidean = pd.DataFrame({'Labels': y, 'Clusters': labels_euclidean})
+                df_mass = pd.DataFrame({'Labels': y, 'Clusters': labels_mass})
+                df_kmeans = pd.DataFrame({'Labels': y, 'Clusters': labels_kmeans})
+
+                labels_classes = np.unique(y)
+                labels_clusters_euclidean = np.unique(labels_euclidean)
+                labels_clusters_mass = np.unique(labels_mass)
+                labels_clusters_kmeans = np.unique(labels_kmeans)
+
+                all_labels = np.sort(labels_classes)
+                all_clusters_euclidean = np.sort(labels_clusters_euclidean)
+                all_clusters_mass = np.sort(labels_clusters_mass)
+                all_clusters_kmeans = np.sort(labels_clusters_kmeans)
+
+                ct_euclidean = pd.crosstab(df_euclidean['Labels'], df_euclidean['Clusters'])
+                ct_euclidean = ct_euclidean.reindex(index=all_labels, columns=all_clusters_euclidean, fill_value=0)
+                ct_euclidean['Total'] = ct_euclidean.sum(axis=1)
+                total_row_euclidean = ct_euclidean.sum(axis=0)
+                total_row_euclidean.name = 'Total'
+                ct_euclidean = pd.concat([ct_euclidean, total_row_euclidean.to_frame().T])
+
+                ct_mass = pd.crosstab(df_mass['Labels'], df_mass['Clusters'])
+                ct_mass = ct_mass.reindex(index=all_labels, columns=all_clusters_mass, fill_value=0)
+                ct_mass['Total'] = ct_mass.sum(axis=1)
+                total_row_mass = ct_mass.sum(axis=0)
+                total_row_mass.name = 'Total'
+                ct_mass = pd.concat([ct_mass, total_row_mass.to_frame().T])
+
+                ct_kmeans = pd.crosstab(df_kmeans['Labels'], df_kmeans['Clusters'])
+                ct_kmeans = ct_kmeans.reindex(index=all_labels, columns=all_clusters_kmeans, fill_value=0)
+                ct_kmeans['Total'] = ct_kmeans.sum(axis=1)
+                total_row_kmeans = ct_kmeans.sum(axis=0)
+                total_row_kmeans.name = 'Total'
+                ct_kmeans = pd.concat([ct_kmeans, total_row_kmeans.to_frame().T])
+
+                plt.subplot(2, 3, 4)
+                sns.heatmap(ct_euclidean, annot=True, fmt='d', cmap='Blues', cbar=False, annot_kws={"size": 8})
+                plt.title(f'Matrice de confusion (Euclidienne)\neps={eps} min_samples={min_samples}')
+                plt.xlabel("Clusters")
+                plt.ylabel("Labels réels")
+
+                plt.subplot(2, 3, 5)
+                sns.heatmap(ct_mass, annot=True, fmt='d', cmap='Blues', cbar=False, annot_kws={"size": 8})
+                plt.title(f'Matrice de confusion (Mass-based)\neps={eps} min_samples={min_samples}')
+                plt.xlabel("Clusters")
+                plt.ylabel("Labels réels")
+
+                plt.subplot(2, 3, 6)
+                sns.heatmap(ct_kmeans, annot=True, fmt='d', cmap='Blues', cbar=False, annot_kws={"size": 8})
+                plt.title('Matrice de confusion (K-means)')
+                plt.xlabel("Clusters")
+                plt.ylabel("Labels réels")
+                plt.tight_layout()
+                plt.show()
 
             results.append({
                 'eps': eps,
                 'min_samples': min_samples,
                 'n_clusters_euclidean': n_clusters_euclidean,
                 'n_noise_euclidean': n_noise_euclidean,
+                'db_euclidean': db_euclidean,
                 'n_clusters_mass': n_clusters_mass,
                 'n_noise_mass': n_noise_mass,
-                'ari_euclidean': ari_euclidean,
-                'ari_mass': ari_mass
+                'db_mass': db_mass,
+                'n_clusters_kmeans': n_clusters_kmeans,
+                'n_noise_kmeans': n_noise_kmeans,
+                'db_kmeans': db_kmeans
             })
     df_results = pd.DataFrame(results)
     print("\nRésultats :")

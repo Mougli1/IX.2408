@@ -1,5 +1,5 @@
 
-from datasets import load_iris_dataset, generate_blobs_dataset, load_custom_dataset, load_matlab_dataset
+from datasets import load_iris_dataset, load_wine_dataset, generate_blobs_dataset, load_custom_dataset, load_matlab_dataset
 
 def main():
     print("Choisissez une comparaison:")
@@ -9,18 +9,21 @@ def main():
 
     print("\nChoisissez un dataset:")
     print("1. Iris")
-    print("2. Blobs")
-    print("3. Dataset personnalisé")
-    print("4. Dataset MATLAB (data.mat)")
-    dataset_choice = input("Entrez votre choix (1, 2, 3 ou 4): ")
+    print("2. Wine")
+    print("3. Blobs")
+    print("4. Dataset personnalisé")
+    print("5. Dataset MATLAB (data.mat)")
+    dataset_choice = input("Entrez votre choix (1, 2, 3, 4 ou 5): ")
 
     if dataset_choice == '1':
         X, y = load_iris_dataset()
     elif dataset_choice == '2':
-        X, y = generate_blobs_dataset()
+        X, y = load_wine_dataset()
     elif dataset_choice == '3':
-        X, y = load_custom_dataset()
+        X, y = generate_blobs_dataset()
     elif dataset_choice == '4':
+        X, y = load_custom_dataset()
+    elif dataset_choice == '5':
         X, y = load_matlab_dataset()
         if X is None:
             print("Impossible de charger le dataset MATLAB. Veuillez vérifier le fichier.")

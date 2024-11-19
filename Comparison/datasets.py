@@ -1,30 +1,46 @@
-from sklearn.datasets import load_iris, make_blobs
-from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import load_iris, load_wine, make_blobs
+from sklearn.preprocessing import MinMaxScaler
 import numpy as np
-import pandas as pd
 from scipy.io import loadmat
+
 def load_iris_dataset():
     iris = load_iris()
     X = iris.data
     y = iris.target
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    return X_scaled, y
+    scaler = MinMaxScaler()
+    X_normalized = scaler.fit_transform(X)
+    return X_normalized, y
+
+def load_wine_dataset():
+    wine = load_wine()
+    X = wine.data
+    y = wine.target
+    scaler = MinMaxScaler()
+    X_normalized = scaler.fit_transform(X)
+    return X_normalized, y
 
 def generate_blobs_dataset():
     X, y = make_blobs(
         n_samples=1000, centers=4, cluster_std=0.60, random_state=42
     )
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    return X_scaled, y
+    scaler = MinMaxScaler()
+    X_normalized = scaler.fit_transform(X)
+    return X_normalized, y
 
 def load_custom_dataset():
-    X = np.random.rand(100, 4)
-    y = None
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    return X_scaled, y
+    try:
+        X = np.loadtxt('example_distances.dat')
+        y = None
+        scaler = MinMaxScaler()
+        X_normalized = scaler.fit_transform(X)
+        return X_normalized, y
+    except FileNotFoundError:
+        print("Le fichier 'example_distances.dat' n'a pas été trouvé.")
+        return None, None
+    except Exception as e:
+        print(f"Erreur produite : {e}")
+        return None, None
+
 
 def load_matlab_dataset():
     try:
@@ -37,9 +53,9 @@ def load_matlab_dataset():
             print(f"Shape de y: {y.shape}")
         if y is not None and y.ndim > 1 and y.shape[1] == 1:
             y = y.ravel()
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        return X_scaled, y
+        scaler = MinMaxScaler()
+        X_normalized = scaler.fit_transform(X)
+        return X_normalized, y
     except FileNotFoundError:
         print("not found")
         return None, None
