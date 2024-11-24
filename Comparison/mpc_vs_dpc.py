@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import pairwise_distances, silhouette_score, davies_bouldin_score
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA  # Importation de PCA
 from mass_based_distance import MeDissimilarity
 from CFSFDP import CFSFDP
 from tqdm import tqdm
@@ -21,7 +22,10 @@ def plot_clusters(X, labels, title):
             xy[:, 0], xy[:, 1], color=col, edgecolors='k', label=f'Cluster {k}'
         )
     plt.title(title)
+    plt.xlabel('Composante Principale 1')
+    plt.ylabel('Composante Principale 2')
     plt.legend()
+
 
 def display_heatmaps(mdist_euclidean, mdist_mass):
     plt.figure(figsize=(14, 6))
@@ -33,9 +37,15 @@ def display_heatmaps(mdist_euclidean, mdist_mass):
     plt.title("Matrice de distances Mass-based")
     plt.show()
 
+
 def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag=False):
     D_scaled = X
     N = D_scaled.shape[0]
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(D_scaled)
+    explained_variance = pca.explained_variance_ratio_.sum()
+    print("Variance expliquée par les deux premières composantes principales : {:.2%}".format(explained_variance))
+
     print("Calcul de la matrice de distances euclidiennes...")
     mdist_euclidean = pairwise_distances(D_scaled, metric='euclidean')
     print("Calcul de la matrice de distances mass-based (peut être long)...")
@@ -59,9 +69,9 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
         print(mdist_mass)
         np.set_printoptions()
 
-    r_values = [0.4, 0.45, 0.5, 0.55]
-    min_density_values = [3, 4]
-    max_dist_values = [0.2, 0.4, 0.5]
+    r_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+    min_density_values = [3, 4, 5, 6, 7]
+    max_dist_values = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     results = []
 
     if y is not None:
@@ -138,8 +148,12 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                 plt.figure(figsize=(15, 8))
 
                 plt.subplot(2, 3, 1)
-                title_euclidean = f'Clusters DPC (Euclidienne)\nr={r}, min_density={min_density}, max_dist={max_dist}'
-                plot_clusters(D_scaled, labels_euclidean, title=title_euclidean)
+                title_euclidean = (
+                    f'Clusters DPC (Euclidienne)\n'
+                    f'Variance expliquée: {explained_variance:.2%}\n'
+                    f'r={r}, min_density={min_density}, max_dist={max_dist}'
+                )
+                plot_clusters(X_pca, labels_euclidean, title=title_euclidean)
 
                 if y is not None:
                     df_euclidean = pd.DataFrame({'Labels': y, 'Clusters': labels_euclidean})
@@ -159,11 +173,16 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('Labels réels')
                 else:
-                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print(
+                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.subplot(2, 3, 2)
-                title_mass = f'Clusters MPC (Mass-based)\nr={r}, min_density={min_density}, max_dist={max_dist}'
-                plot_clusters(D_scaled, labels_mass, title=title_mass)
+                title_mass = (
+                    f'Clusters MPC (Mass-based)\n'
+                    f'Variance expliquée: {explained_variance:.2%}\n'
+                    f'r={r}, min_density={min_density}, max_dist={max_dist}'
+                )
+                plot_clusters(X_pca, labels_mass, title=title_mass)
 
                 if y is not None:
                     df_mass = pd.DataFrame({'Labels': y, 'Clusters': labels_mass})
@@ -181,11 +200,15 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('Labels réels')
                 else:
-                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print(
+                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.subplot(2, 3, 3)
-                title_kmeans = f'Clusters k-means (k=3)'
-                plot_clusters(D_scaled, labels_kmeans, title=title_kmeans)
+                title_kmeans = (
+                    f'Clusters k-means (k=3)\n'
+                    f'Variance expliquée: {explained_variance:.2%}'
+                )
+                plot_clusters(X_pca, labels_kmeans, title=title_kmeans)
 
                 if y is not None:
                     df_kmeans = pd.DataFrame({'Labels': y, 'Clusters': labels_kmeans})
@@ -203,7 +226,8 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('Labels réels')
                 else:
-                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print(
+                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.tight_layout()
                 plt.show()
