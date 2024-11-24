@@ -1,5 +1,5 @@
 
-from datasets import load_iris_dataset, load_wine_dataset, generate_blobs_dataset, load_custom_dataset, load_matlab_dataset
+from datasets import load_breast_cancer_dataset, load_wine_dataset, generate_blobs_dataset, load_custom_dataset, load_matlab_dataset
 
 def main():
     print("Choisissez une comparaison:")
@@ -8,7 +8,7 @@ def main():
     comparison_choice = input("Entrez votre choix (1 ou 2): ")
 
     print("\nChoisissez un dataset:")
-    print("1. Iris")
+    print("1. Breast Cancer Wisconsin")
     print("2. Wine")
     print("3. Blobs")
     print("4. Dataset personnalisé")
@@ -16,7 +16,7 @@ def main():
     dataset_choice = input("Entrez votre choix (1, 2, 3, 4 ou 5): ")
 
     if dataset_choice == '1':
-        X, y = load_iris_dataset()
+        X, y = load_breast_cancer_dataset()
     elif dataset_choice == '2':
         X, y = load_wine_dataset()
     elif dataset_choice == '3':

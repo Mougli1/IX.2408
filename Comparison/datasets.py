@@ -1,12 +1,12 @@
-from sklearn.datasets import load_iris, load_wine, make_blobs
+from sklearn.datasets import load_breast_cancer, load_wine, make_blobs
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from scipy.io import loadmat
 
-def load_iris_dataset():
-    iris = load_iris()
-    X = iris.data
-    y = iris.target
+def load_breast_cancer_dataset():
+    breast_cancer = load_breast_cancer()
+    X = breast_cancer.data
+    y = breast_cancer.target
     scaler = MinMaxScaler()
     X_normalized = scaler.fit_transform(X)
     return X_normalized, y
