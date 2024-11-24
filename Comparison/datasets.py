@@ -20,12 +20,20 @@ def load_wine_dataset():
     return X_normalized, y
 
 def generate_blobs_dataset():
-    X, y = make_blobs(
-        n_samples=1000, centers=4, cluster_std=0.60, random_state=42
-    )
-    scaler = MinMaxScaler()
-    X_normalized = scaler.fit_transform(X)
-    return X_normalized, y
+    a = np.random.multivariate_normal([5, 0], [[15, 0], [0, 15]], 200)
+    b = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], 250)
+    c = np.random.multivariate_normal([10, -5], [[1.5, 0], [0, 1.5]], 250)
+    d = np.random.multivariate_normal([10, 10], [[0.5, 0], [0, 0.5]], 350)
+    e = np.random.multivariate_normal([-5, 10], [[0.4, 0], [0, 0.4]], 25)
+    D = np.concatenate((a, b, c, d, e), )
+    # Création des labels
+    labels_a = np.zeros(200)  # Label 0 pour 'a'
+    labels_b = np.ones(250)  # Label 1 pour 'b'
+    labels_c = np.full(250, 2)  # Label 2 pour 'c'
+    labels_d = np.full(350, 3)  # Label 3 pour 'd'
+    labels_e = np.full(25, 4)  # Label 4 pour 'e'
+    y = np.concatenate((labels_a, labels_b, labels_c, labels_d, labels_e))
+    return D, y
 
 def load_custom_dataset():
     try:
