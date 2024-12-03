@@ -1,5 +1,5 @@
 
-from datasets import load_breast_cancer_dataset, load_wine_dataset, generate_blobs_dataset, load_custom_dataset, load_matlab_dataset
+from datasets import load_breast_cancer_dataset, load_wine_dataset, generate_custom_dataset, load_digits_dataset, load_matlab_dataset
 
 def main():
     print("Choisissez une comparaison:")
@@ -10,24 +10,18 @@ def main():
     print("\nChoisissez un dataset:")
     print("1. Breast Cancer Wisconsin")
     print("2. Wine")
-    print("3. Blobs")
-    print("4. Dataset personnalisé")
-    print("5. Dataset MATLAB (data.mat)")
-    dataset_choice = input("Entrez votre choix (1, 2, 3, 4 ou 5): ")
+    print("3. Custom dataset")
+    print("4. Digits")
+    dataset_choice = input("Entrez votre choix (1, 2, 3 ou 4 ): ")
 
     if dataset_choice == '1':
         X, y = load_breast_cancer_dataset()
     elif dataset_choice == '2':
         X, y = load_wine_dataset()
     elif dataset_choice == '3':
-        X, y = generate_blobs_dataset()
+        X, y = generate_custom_dataset()
     elif dataset_choice == '4':
-        X, y = load_custom_dataset()
-    elif dataset_choice == '5':
-        X, y = load_matlab_dataset()
-        if X is None:
-            print("Impossible de charger le dataset MATLAB. Veuillez vérifier le fichier.")
-            return
+        X, y = load_digits_dataset()
     else:
         print("Choix de dataset invalide.")
         return

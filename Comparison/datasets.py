@@ -1,4 +1,4 @@
-from sklearn.datasets import load_breast_cancer, load_wine, make_blobs
+from sklearn.datasets import load_breast_cancer, load_wine, make_blobs, load_digits
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from scipy.io import loadmat
@@ -19,14 +19,14 @@ def load_wine_dataset():
     X_normalized = scaler.fit_transform(X)
     return X_normalized, y
 
-def generate_blobs_dataset():
+def generate_custom_dataset():
     a = np.random.multivariate_normal([5, 0], [[15, 0], [0, 15]], 200)
     b = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], 250)
     c = np.random.multivariate_normal([10, -5], [[1.5, 0], [0, 1.5]], 250)
     d = np.random.multivariate_normal([10, 10], [[0.5, 0], [0, 0.5]], 350)
     e = np.random.multivariate_normal([-5, 10], [[0.4, 0], [0, 0.4]], 25)
     D = np.concatenate((a, b, c, d, e), )
-    # Création des labels
+    
     labels_a = np.zeros(200)  # Label 0 pour 'a'
     labels_b = np.ones(250)  # Label 1 pour 'b'
     labels_c = np.full(250, 2)  # Label 2 pour 'c'
@@ -35,19 +35,13 @@ def generate_blobs_dataset():
     y = np.concatenate((labels_a, labels_b, labels_c, labels_d, labels_e))
     return D, y
 
-def load_custom_dataset():
-    try:
-        X = np.loadtxt('example_distances.dat')
-        y = None
-        scaler = MinMaxScaler()
-        X_normalized = scaler.fit_transform(X)
-        return X_normalized, y
-    except FileNotFoundError:
-        print("Le fichier 'example_distances.dat' n'a pas été trouvé.")
-        return None, None
-    except Exception as e:
-        print(f"Erreur produite : {e}")
-        return None, None
+def load_digits_dataset():
+    digits = load_digits()
+    X = digits.data
+    y = digits.target
+    scaler = MinMaxScaler()
+    X_normalized = scaler.fit_transform(X)
+    return X_normalized, y
 
 
 def load_matlab_dataset():
