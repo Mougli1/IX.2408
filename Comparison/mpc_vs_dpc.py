@@ -9,7 +9,6 @@ from CFSFDP import CFSFDP
 from tqdm import tqdm
 import seaborn as sns
 
-
 def plot_clusters(X, labels, title):
     unique_labels = set(labels)
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
@@ -38,23 +37,29 @@ def display_heatmaps(mdist_euclidean, mdist_mass):
     plt.show()
 
 
-def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag=False):
-    D_scaled = X
-    N = D_scaled.shape[0]
+def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, display_matrices_flag=False,
+                   wbcd_param=False, wine_param=False, custom_param=False, digits_param=False, iris_param=False):
+    D_euclidean = X_normalized
+    D_euclidean = X_normalized
+    D_mass = X_orig
+
+    N = D_euclidean.shape[0]
+
     pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(D_scaled)
+    X_pca = pca.fit_transform(D_euclidean)
     explained_variance = pca.explained_variance_ratio_.sum()
     print("Variance expliquée par les deux premières composantes principales : {:.2%}".format(explained_variance))
 
     print("Calcul de la matrice de distances euclidiennes...")
-    mdist_euclidean = pairwise_distances(D_scaled, metric='euclidean')
+    mdist_euclidean = pairwise_distances(D_euclidean, metric='euclidean')
+
     print("Calcul de la matrice de distances mass-based (peut être long)...")
-    me_dissim = MeDissimilarity(D_scaled)
+    me_dissim = MeDissimilarity(D_mass)
     dissim_func = me_dissim.get_dissim_func(num_itrees=100)
     mdist_mass = np.zeros((N, N))
     for i in tqdm(range(N), desc="Calcul des distances mass-based"):
         for j in range(i, N):
-            distance = me_dissim.mass_based_dissimilarity(D_scaled[i], D_scaled[j])
+            distance = me_dissim.mass_based_dissimilarity(D_mass[i], D_mass[j])
             mdist_mass[i, j] = distance
             mdist_mass[j, i] = distance
 
@@ -68,10 +73,32 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
         print("\nMatrice de distances Mass-based :")
         print(mdist_mass)
         np.set_printoptions()
+    # Définition des paramètres en fonction du dataset choisi
+    if wbcd_param:
+        r_values = [0.4, 0.45, 0.5, 0.55]
+        min_density_values = [3, 4]
+        max_dist_values = [0.2, 0.4, 0.5]
+    elif wine_param:
+        r_values = [0.5, 0.6, 0.7]
+        min_density_values = [2, 5]
+        max_dist_values = [0.3, 0.45]
+    elif custom_param:
+        r_values = [1, 2, 3, 4]
+        min_density_values = [3, 6]
+        max_dist_values = [0.2, 0.4, 0.5]
+    elif digits_param:
+        r_values = [0.1, 0.2, 0.3]
+        min_density_values = [1, 2]
+        max_dist_values = [0.1, 0.2]
+    elif iris_param:
+        r_values = [0.3, 0.35, 0.4]
+        min_density_values = [2, 3]
+        max_dist_values = [0.25, 0.35]
+    else:
+        r_values = [0.4, 0.45]
+        min_density_values = [3]
+        max_dist_values = [0.2]
 
-    r_values = [0.4, 0.45, 0.5, 0.55]
-    min_density_values = [3, 4]
-    max_dist_values = [0.2, 0.4, 0.5]
 
     results = []
 
@@ -83,16 +110,16 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
             for max_dist in max_dist_values:
                 print(f"\nDPC/MPC avec r={r}, min_density={min_density}, max_dist={max_dist}")
                 clt_euclidean, rho_euclidean, delta_euclidean, seeds_euclidean = CFSFDP(
-                    D_scaled, mdist_euclidean, r, min_density, max_dist, True
+                    D_euclidean, mdist_euclidean, r, min_density, max_dist, True
                 )
                 labels_euclidean = clt_euclidean
                 clt_mass, rho_mass, delta_mass, seeds_mass = CFSFDP(
-                    D_scaled, mdist_mass, r, min_density, max_dist, True
+                    D_mass, mdist_mass, r, min_density, max_dist, True
                 )
                 labels_mass = clt_mass
 
                 kmeans = KMeans(n_clusters=3, random_state=0)
-                labels_kmeans = kmeans.fit_predict(D_scaled) + 1
+                labels_kmeans = kmeans.fit_predict(D_euclidean) + 1
 
                 n_clusters_euclidean = len(set(labels_euclidean)) - (1 if -1 in labels_euclidean else 0)
                 n_noise_euclidean = list(labels_euclidean).count(-1)
@@ -104,33 +131,24 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                 n_noise_kmeans = list(labels_kmeans).count(-1)
 
                 if n_clusters_euclidean > 1:
-                    silhouette_euclidean = silhouette_score(D_scaled, labels_euclidean)
+                    silhouette_euclidean = silhouette_score(D_euclidean, labels_euclidean)
+                    db_euclidean = davies_bouldin_score(D_euclidean, labels_euclidean)
                 else:
                     silhouette_euclidean = np.nan
-
-                if n_clusters_mass > 1:
-                    silhouette_mass = silhouette_score(D_scaled, labels_mass)
-                else:
-                    silhouette_mass = np.nan
-
-                if n_clusters_kmeans > 1:
-                    silhouette_kmeans = silhouette_score(D_scaled, labels_kmeans)
-                else:
-                    silhouette_kmeans = np.nan
-
-                if n_clusters_euclidean > 1:
-                    db_euclidean = davies_bouldin_score(D_scaled, labels_euclidean)
-                else:
                     db_euclidean = np.nan
 
                 if n_clusters_mass > 1:
-                    db_mass = davies_bouldin_score(D_scaled, labels_mass)
+                    silhouette_mass = silhouette_score(D_mass, labels_mass)
+                    db_mass = davies_bouldin_score(D_mass, labels_mass)
                 else:
+                    silhouette_mass = np.nan
                     db_mass = np.nan
 
                 if n_clusters_kmeans > 1:
-                    db_kmeans = davies_bouldin_score(D_scaled, labels_kmeans)
+                    silhouette_kmeans = silhouette_score(D_euclidean, labels_kmeans)
+                    db_kmeans = davies_bouldin_score(D_euclidean, labels_kmeans)
                 else:
+                    silhouette_kmeans = np.nan
                     db_kmeans = np.nan
 
                 print(
@@ -174,8 +192,7 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('True labels')
                 else:
-                    print(
-                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.subplot(2, 3, 2)
                 title_mass = (
@@ -201,8 +218,7 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('True labels')
                 else:
-                    print(
-                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.subplot(2, 3, 3)
                 title_kmeans = (
@@ -227,8 +243,7 @@ def run_mpc_vs_dpc(X, y=None, display_heatmaps_flag=False, display_matrices_flag
                     plt.xlabel('Clusters')
                     plt.ylabel('True labels')
                 else:
-                    print(
-                        "Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
+                    print("Les vraies étiquettes ne sont pas disponibles. Impossible de calculer la matrice de confusion.")
 
                 plt.tight_layout()
                 plt.show()

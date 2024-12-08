@@ -63,9 +63,8 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
         print(mdist_mass)
         np.set_printoptions()
 
-    eps_values = [0.25, 0.3, 0.35, 0.4]
-    min_samples_values = [4, 5, 6, 7]
-
+    eps_values = [0.2, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.5]
+    min_samples_values = [2, 3, 4, 5, 6, 7, 8, 9, 10]
     results = []
     y = y + 1
     for eps in eps_values:
