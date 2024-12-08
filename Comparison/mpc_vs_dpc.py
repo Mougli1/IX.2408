@@ -40,7 +40,6 @@ def display_heatmaps(mdist_euclidean, mdist_mass):
 def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, display_matrices_flag=False,
                    wbcd_param=False, wine_param=False, custom_param=False, digits_param=False, iris_param=False):
     D_euclidean = X_normalized
-    D_euclidean = X_normalized
     D_mass = X_orig
 
     N = D_euclidean.shape[0]

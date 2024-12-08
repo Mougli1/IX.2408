@@ -12,7 +12,7 @@ def plot_clusters(X, labels, title):
     colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
     for k, col in zip(sorted(unique_labels), colors):
         if k == -1:
-            col = [0, 0, 0, 1]
+            col = [0, 0, 0, 1]  # nori pour le bruit
         class_member_mask = (labels == k)
         xy = X[class_member_mask]
         plt.scatter(
@@ -21,12 +21,13 @@ def plot_clusters(X, labels, title):
     plt.title(title)
     plt.legend()
 
-def compute_mass_based_distance_matrix(me_dissim, X):
-    N = X.shape[0]
+
+def compute_mass_based_distance_matrix(me_dissim, X_orig):
+    N = X_orig.shape[0]
     mdist_mass = np.zeros((N, N))
     for i in tqdm(range(N), desc="Calcul des distances mass-based"):
         for j in range(i, N):
-            distance = me_dissim.mass_based_dissimilarity(X[i], X[j])
+            distance = me_dissim.mass_based_dissimilarity(X_orig[i], X_orig[j])
             mdist_mass[i, j] = distance
             mdist_mass[j, i] = distance
     return mdist_mass
@@ -34,23 +35,27 @@ def compute_mass_based_distance_matrix(me_dissim, X):
 def display_heatmaps(mdist_euclidean, mdist_mass):
     plt.figure(figsize=(14, 6))
     plt.subplot(1, 2, 1)
-    sns.heatmap(mdist_euclidean)
+    sns.heatmap(mdist_euclidean, cmap='viridis')
     plt.title("Matrice de distances Euclidiennes")
     plt.subplot(1, 2, 2)
-    sns.heatmap(mdist_mass)
+    sns.heatmap(mdist_mass, cmap='viridis')
     plt.title("Matrice de distances Mass-based")
     plt.show()
 
-def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_flag=False):
-    X_scaled = X
-    me_dissim = MeDissimilarity(X_scaled)
+
+def run_mbscan_vs_dbscan(X_normalized, X_orig, y, display_heatmaps_flag=False, display_matrices_flag=False,
+                         wbcd_param=False, wine_param=False, custom_param=False, digits_param=False, iris_param=False):
+    X_scaled = X_normalized
+    X_mass = X_orig
+
+    me_dissim = MeDissimilarity(X_mass)
     dissim_func = me_dissim.get_dissim_func(num_itrees=100)
 
-    print("Calcul de la matrice de distances euclidiennes...")
+    print("Calcul de la matrice de distances Euclidiennes...")
     mdist_euclidean = pairwise_distances(X_scaled, metric='euclidean')
 
-    print("Calcul de la matrice de distances mass-based (peut être long)...")
-    mdist_mass = compute_mass_based_distance_matrix(me_dissim, X_scaled)
+    print("Calcul de la matrice de distances Mass-based (peut être long)...")
+    mdist_mass = compute_mass_based_distance_matrix(me_dissim, X_mass)
 
     if display_heatmaps_flag:
         display_heatmaps(mdist_euclidean, mdist_mass)
@@ -63,10 +68,28 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
         print(mdist_mass)
         np.set_printoptions()
 
-    eps_values = [0.2, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.5]
-    min_samples_values = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    if wbcd_param:
+        eps_values = [0.3, 0.35, 0.4, 0.45]
+        min_samples_values = [3, 4, 5]
+    elif wine_param:
+        eps_values = [0.4, 0.45, 0.5]
+        min_samples_values = [3, 5, 7]
+    elif custom_param:
+        eps_values = [0.2, 0.25, 0.3]
+        min_samples_values = [2, 4, 6]
+    elif digits_param:
+        eps_values = [0.15, 0.2, 0.25]
+        min_samples_values = [2, 3, 5]
+    elif iris_param:
+        eps_values = [0.3, 0.35, 0.4]
+        min_samples_values = [3, 4]
+    else:
+        eps_values = [0.2, 0.25, 0.3]
+        min_samples_values = [2, 3]
+
     results = []
-    y = y + 1
+    y_adjusted = y + 1
+
     for eps in eps_values:
         for min_samples in min_samples_values:
             print(f"\nMBSCAN/DBSCAN avec eps={eps} et min_samples={min_samples}")
@@ -83,48 +106,33 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
             kmeans = KMeans(n_clusters=3, random_state=0)
             labels_kmeans = kmeans.fit_predict(X_scaled) + 1
 
-            n_clusters_euclidean = len(set(labels_euclidean)) - (
-                1 if -1 in labels_euclidean else 0
-            )
+            n_clusters_euclidean = len(set(labels_euclidean)) - (1 if -1 in labels_euclidean else 0)
             n_noise_euclidean = list(labels_euclidean).count(-1)
-            n_clusters_mass = len(set(labels_mass)) - (
-                1 if -1 in labels_mass else 0
-            )
+            n_clusters_mass = len(set(labels_mass)) - (1 if -1 in labels_mass else 0)
             n_noise_mass = list(labels_mass).count(-1)
-            n_clusters_kmeans = len(set(labels_kmeans)) - (
-                1 if -1 in labels_kmeans else 0
-            )
+            n_clusters_kmeans = len(set(labels_kmeans)) - (1 if -1 in labels_kmeans else 0)
             n_noise_kmeans = list(labels_kmeans).count(-1)
 
             if n_clusters_euclidean > 1:
+                silhouette_euclidean = silhouette_score(X_scaled, labels_euclidean)
                 db_euclidean = davies_bouldin_score(X_scaled, labels_euclidean)
             else:
+                silhouette_euclidean = np.nan
                 db_euclidean = np.nan
 
             if n_clusters_mass > 1:
-                db_mass = davies_bouldin_score(X_scaled, labels_mass)
+                silhouette_mass = silhouette_score(X_mass, labels_mass)
+                db_mass = davies_bouldin_score(X_mass, labels_mass)
             else:
+                silhouette_mass = np.nan
                 db_mass = np.nan
 
             if n_clusters_kmeans > 1:
+                silhouette_kmeans = silhouette_score(X_scaled, labels_kmeans)
                 db_kmeans = davies_bouldin_score(X_scaled, labels_kmeans)
             else:
-                db_kmeans = np.nan
-
-            if n_clusters_euclidean > 1 and len(set(labels_euclidean)) <= len(X_scaled):
-                silhouette_euclidean = silhouette_score(X_scaled, labels_euclidean)
-            else:
-                silhouette_euclidean = np.nan
-
-            if n_clusters_mass > 1 and len(set(labels_mass)) <= len(X_scaled):
-                silhouette_mass = silhouette_score(X_scaled, labels_mass)
-            else:
-                silhouette_mass = np.nan
-
-            if n_clusters_kmeans > 1 and len(set(labels_kmeans)) <= len(X_scaled):
-                silhouette_kmeans = silhouette_score(X_scaled, labels_kmeans)
-            else:
                 silhouette_kmeans = np.nan
+                db_kmeans = np.nan
 
             print(
                 f"Euclidienne - Clusters: {n_clusters_euclidean}, Bruit: {n_noise_euclidean}, "
@@ -145,15 +153,15 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
             plot_clusters(
                 X_scaled,
                 labels_euclidean,
-                title=title_euclidean,
+                title_euclidean,
             )
 
             plt.subplot(2, 3, 2)
             title_mass = f'Masse-based eps={eps} min_samples={min_samples}'
             plot_clusters(
-                X_scaled,
+                X_mass,
                 labels_mass,
-                title=title_mass,
+                title_mass,
             )
 
             plt.subplot(2, 3, 3)
@@ -161,15 +169,15 @@ def run_mbscan_vs_dbscan(X, y, display_heatmaps_flag=False, display_matrices_fla
             plot_clusters(
                 X_scaled,
                 labels_kmeans,
-                title=title_kmeans,
+                title_kmeans,
             )
 
             if y is not None:
-                df_euclidean = pd.DataFrame({'Labels': y, 'Clusters': labels_euclidean})
-                df_mass = pd.DataFrame({'Labels': y, 'Clusters': labels_mass})
-                df_kmeans = pd.DataFrame({'Labels': y, 'Clusters': labels_kmeans})
+                df_euclidean = pd.DataFrame({'Labels': y_adjusted, 'Clusters': labels_euclidean})
+                df_mass = pd.DataFrame({'Labels': y_adjusted, 'Clusters': labels_mass})
+                df_kmeans = pd.DataFrame({'Labels': y_adjusted, 'Clusters': labels_kmeans})
 
-                labels_classes = np.unique(y)
+                labels_classes = np.unique(y_adjusted)
                 labels_clusters_euclidean = np.unique(labels_euclidean)
                 labels_clusters_mass = np.unique(labels_mass)
                 labels_clusters_kmeans = np.unique(labels_kmeans)

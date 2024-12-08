@@ -22,7 +22,7 @@ def main():
     wine_param = False
     custom_param = False
     digits_param = False
-    iris_param = False  # Ajout de l'iris_param
+    iris_param = False
 
     if dataset_choice == '1':
         X_orig, y = load_breast_cancer_dataset(normalize=False)
@@ -53,7 +53,18 @@ def main():
     display_matrices_flag = display_matrices_input.lower() in ['o', 'oui', 'y', 'yes']
 
     if comparison_choice == '1':
-        mbscan_vs_dbscan.run_mbscan_vs_dbscan(X_normalized, y, display_heatmaps_flag, display_matrices_flag)
+        mbscan_vs_dbscan.run_mbscan_vs_dbscan(
+            X_normalized,
+            X_orig,
+            y,
+            display_heatmaps_flag,
+            display_matrices_flag,
+            wbcd_param=wbcd_param,
+            wine_param=wine_param,
+            custom_param=custom_param,
+            digits_param=digits_param,
+            iris_param=iris_param
+        )
     elif comparison_choice == '2':
         mpc_vs_dpc.run_mpc_vs_dpc(
             X_normalized,
@@ -65,7 +76,7 @@ def main():
             wine_param=wine_param,
             custom_param=custom_param,
             digits_param=digits_param,
-            iris_param=iris_param  # Passer l'iris_param
+            iris_param=iris_param
         )
     else:
         print("Choix de comparaison invalide.")
