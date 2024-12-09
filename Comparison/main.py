@@ -22,7 +22,7 @@ def main():
     wine_param = False
     custom_param = False
     digits_param = False
-    iris_param = False  # Ajout de l'iris_param
+    iris_param = False
 
     if dataset_choice == '1':
         X_orig, y = load_breast_cancer_dataset(normalize=False)

@@ -40,7 +40,6 @@ def display_heatmaps(mdist_euclidean, mdist_mass):
 def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, display_matrices_flag=False,
                    wbcd_param=False, wine_param=False, custom_param=False, digits_param=False, iris_param=False):
     D_euclidean = X_normalized
-    D_euclidean = X_normalized
     D_mass = X_orig
 
     N = D_euclidean.shape[0]
@@ -73,27 +72,27 @@ def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, di
         print("\nMatrice de distances Mass-based :")
         print(mdist_mass)
         np.set_printoptions()
-    # Définition des paramètres en fonction du dataset choisi
+
     if wbcd_param:
         r_values = [0.4, 0.45, 0.5, 0.55]
         min_density_values = [3, 4]
         max_dist_values = [0.2, 0.4, 0.5]
     elif wine_param:
-        r_values = [0.5, 0.6, 0.7]
-        min_density_values = [2, 5]
-        max_dist_values = [0.3, 0.45]
-    elif custom_param:
-        r_values = [1, 2, 3, 4]
-        min_density_values = [3, 6]
+        r_values = [0.4, 0.45, 0.5, 0.55]
+        min_density_values = [3, 4]
         max_dist_values = [0.2, 0.4, 0.5]
+    elif custom_param:
+        r_values = [0.1, 0.2, 0.25, 0.3, 0.35]
+        min_density_values = [1, 3, 6]
+        max_dist_values = [0.2, 0.3, 0.5]
     elif digits_param:
-        r_values = [0.1, 0.2, 0.3]
-        min_density_values = [1, 2]
-        max_dist_values = [0.1, 0.2]
+        r_values = [0.1, 0.3, 0.35, 0.4, 0.45]
+        min_density_values = [3, 6]
+        max_dist_values = [0.3, 0.4, 0.5]
     elif iris_param:
-        r_values = [0.3, 0.35, 0.4]
-        min_density_values = [2, 3]
-        max_dist_values = [0.25, 0.35]
+        r_values = [0.1, 0.2, 0.3, 0.35]
+        min_density_values = [3, 6]
+        max_dist_values = [0.1, 0.4, 0.5]
     else:
         r_values = [0.4, 0.45]
         min_density_values = [3]
@@ -118,7 +117,7 @@ def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, di
                 )
                 labels_mass = clt_mass
 
-                kmeans = KMeans(n_clusters=3, random_state=0)
+                kmeans = KMeans(n_clusters=10, random_state=0)
                 labels_kmeans = kmeans.fit_predict(D_euclidean) + 1
 
                 n_clusters_euclidean = len(set(labels_euclidean)) - (1 if -1 in labels_euclidean else 0)
@@ -222,7 +221,7 @@ def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, di
 
                 plt.subplot(2, 3, 3)
                 title_kmeans = (
-                    f'K-means Clustering (with k=3)\n'
+                    f'K-means Clustering (with k=10)\n'
                     f'Explained Variance: {explained_variance:.2%}'
                 )
                 plot_clusters(X_pca, labels_kmeans, title=title_kmeans)
