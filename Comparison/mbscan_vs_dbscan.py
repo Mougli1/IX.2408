@@ -69,11 +69,11 @@ def run_mbscan_vs_dbscan(X_normalized, X_orig, y, display_heatmaps_flag=False, d
         np.set_printoptions()
 
     if wbcd_param:
-        eps_values = [0.3, 0.35, 0.4, 0.45]
-        min_samples_values = [3, 4, 5]
+        eps_values = [0.325, 0.35, 0.355, 0.360]
+        min_samples_values = [4, 5, 6, 7, 8]
     elif wine_param:
-        eps_values = [0.4, 0.45, 0.5]
-        min_samples_values = [3, 5, 7]
+        eps_values = [0.4, 0.41, 0.42, 0.43]
+        min_samples_values = [3, 5, 7, 9]
     elif custom_param:
         eps_values = [0.2, 0.25, 0.3]
         min_samples_values = [2, 4, 6]
@@ -81,8 +81,8 @@ def run_mbscan_vs_dbscan(X_normalized, X_orig, y, display_heatmaps_flag=False, d
         eps_values = [0.15, 0.2, 0.25]
         min_samples_values = [2, 3, 5]
     elif iris_param:
-        eps_values = [0.3, 0.35, 0.4]
-        min_samples_values = [3, 4]
+        eps_values = [0.1, 0.125, 0.130, 0.140]
+        min_samples_values = [3, 4, 5, 6, 7]
     else:
         eps_values = [0.2, 0.25, 0.3]
         min_samples_values = [2, 3]

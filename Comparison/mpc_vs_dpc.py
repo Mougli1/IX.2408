@@ -94,10 +94,9 @@ def run_mpc_vs_dpc(X_normalized, X_orig, y=None, display_heatmaps_flag=False, di
         min_density_values = [3, 6]
         max_dist_values = [0.1, 0.4, 0.5]
     else:
-        r_values = [0.4, 0.45]
-        min_density_values = [3]
-        max_dist_values = [0.2]
-
+        r_values = [0.4, 0.45, 0.5, 0.55]
+        min_density_values = [3, 4]
+        max_dist_values = [0.2, 0.4, 0.5]
 
     results = []
 
